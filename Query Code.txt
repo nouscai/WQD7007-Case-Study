@@ -1,0 +1,102 @@
+hdfs dfs -rm -r /user/hdfs/casestudy
+hadoop/bin/hadoop fs -mkdir /user/hdfs/casestudy
+hdfs dfs -put Disneylandhive.csv  /user/hdfs/casestudy/Disneyland.csv
+
+CREATE TABLE disneyland (
+    Review_ID INT,
+    Rating INT,
+    Year_Month STRING,
+    Reviewer_Location STRING,
+    Branch STRING,
+    Year INT,
+    Month INT
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+TBLPROPERTIES ("skip.header.line.count"="1");
+
+LOAD DATA INPATH '/user/hdfs/casestudy/Disneyland.csv' INTO TABLE disneyland;
+
+1. Query 1: Average Rating
+SELECT Branch, AVG(Rating) AS average_rating
+FROM disneyland
+GROUP BY Branch;
+
+2. Query 2: Reviewer's Country
+SELECT Reviewer_Location, COUNT(*) AS number_of_reviews
+FROM disneyland
+GROUP BY Reviewer_Location
+ORDER BY number_of_reviews DESC;
+
+3. Query 3: Average Rating for Specific Countries
+SELECT Reviewer_Location, AVG(Rating) AS average_rating
+FROM disneyland
+WHERE Reviewer_Location IN ('Malaysia', 'Singapore', 'Indonesia', 'Thailand', 'Philippines')
+GROUP BY Reviewer_Location;
+
+4. Query 4: Visitors from Specific Countries (Malaysia, Singapore, Indonesia, Thailand, Philippines) to Disneyland Branches
+SELECT Reviewer_Location, Branch, COUNT(*) AS number_of_visitors
+FROM disneyland
+WHERE Reviewer_Location IN ('Malaysia', 'Singapore', 'Indonesia', 'Thailand', 'Philippines')
+GROUP BY Reviewer_Location, Branch
+ORDER BY Reviewer_Location, number_of_visitors DESC;
+
+5. Query 5: Number of Reviews per Month
+SELECT Month, COUNT(*) AS number_of_reviews
+FROM disneyland
+GROUP BY Month
+ORDER BY Month;
+
+5. Query 5: Number of Reviews per Month (Ordered by Number of Reviews, Descending)
+SELECT Month, COUNT(*) AS number_of_reviews
+FROM disneyland
+GROUP BY Month
+ORDER BY number_of_reviews DESC;
+
+5. Query 5: Number of Reviews per Year
+SELECT Year, COUNT(*) AS number_of_reviews
+FROM disneyland
+GROUP BY Year
+ORDER BY number_of_reviews DESC;
+
+5. Query 5: Number of Reviews per Month for Specific Countries
+SELECT Month, COUNT(*) AS number_of_reviews
+FROM disneyland
+WHERE Reviewer_Location IN ('Malaysia', 'Singapore', 'Indonesia', 'Thailand', 'Philippines')
+GROUP BY Month
+ORDER BY number_of_reviews DESC;
+
+6. Query 6: Number of Reviews per Year for Specific Countries
+SELECT Year, COUNT(*) AS number_of_reviews
+FROM disneyland
+WHERE Reviewer_Location IN ('Malaysia', 'Singapore', 'Indonesia', 'Thailand', 'Philippines')
+GROUP BY Year
+ORDER BY number_of_reviews DESC;
+
+7. Query 7: Latest Year and Month
+SELECT MAX(Year_Month) AS latest_year_month
+FROM disneyland;
+
+#######################################################
+
+txt 
+hadoop/bin/hadoop fs -mkdir /user/hdfs/casestudy2
+hdfs dfs -put output.txt  /user/hdfs/casestudy2/output.txt
+
+hadoop jar hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.10.2.jar wordcount /user/hdfs/casestudy2/output.txt /user/hdfs/results
+hadoop fs -ls /user/hdfs/results
+hadoop fs -cat /user/hdfs/results/part-r-00000
+
+CREATE TABLE results (
+    word STRING,
+    count INT
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE;
+
+LOAD DATA INPATH '/user/hdfs/results' INTO TABLE results;
+
+1. Query 1: Top 10 Words with the Most Counts
+SELECT * FROM results ORDER BY count DESC LIMIT 10;
